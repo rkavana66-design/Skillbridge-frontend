@@ -12,11 +12,15 @@ const config: Config = {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       colors: {
+        // Flipped for the dark glassmorphism theme: "ink" is now light text,
+        // "paper" is now the dark page background. Every existing className
+        // in the app (text-ink, bg-paper, etc.) stays exactly the same —
+        // only what these tokens resolve to has changed.
         ink: {
-          DEFAULT: "#111827",
-          light: "#64748B",
+          DEFAULT: "#F1F5F9",
+          light: "#94A3B8",
         },
-        paper: "#F5F7FF",
+        paper: "#0D0F14",
         indigo: {
           50: "#EEF2FF",
           100: "#E0E7FF",
@@ -33,7 +37,7 @@ const config: Config = {
           50: "#F0FDF4",
           100: "#DCFCE7",
           400: "#4ADE80",
-          500: "#16A34A",
+          500: "#10B981",
           600: "#15803D",
         },
         amber: {
@@ -44,7 +48,7 @@ const config: Config = {
         clay: {
           50: "#FEF2F2",
           400: "#F87171",
-          500: "#DC2626",
+          500: "#EF4444",
         },
       },
       borderRadius: {
@@ -53,7 +57,7 @@ const config: Config = {
         lg: "10px",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(16, 20, 51, 0.06), 0 1px 0 rgba(16,20,51,0.04)",
+        card: "0 8px 30px rgba(0, 0, 0, 0.35)",
       },
     },
   },

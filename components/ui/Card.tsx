@@ -16,7 +16,7 @@ export default function Card({
 }: CardProps) {
   return (
     <div
-      className={`rounded-lg border border-indigo-100 bg-white shadow-card p-6 transition-all duration-200 ${className}`}
+      className={`rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl shadow-card p-6 transition-all duration-200 ${className}`}
       {...props}
     >
       {(title || action) && (

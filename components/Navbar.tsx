@@ -19,24 +19,24 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-gradient-to-r from-indigo-600 via-indigo-600 to-purple-600 shadow-md">
+    <nav className="border-b border-white/10 bg-paper/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white font-display text-sm font-bold text-indigo-600">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-verdant-500 font-display text-sm font-bold text-white shadow-[0_0_16px_rgba(79,70,229,0.5)]">
             S
           </span>
-          <span className="font-display text-lg font-semibold text-white">Setu</span>
+          <span className="font-display text-lg font-semibold text-ink">Setu</span>
         </Link>
 
         {user ? (
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm font-medium text-white leading-tight">{user.name}</p>
-              <p className="text-xs capitalize text-indigo-100 leading-tight">{user.role}</p>
+              <p className="text-sm font-medium text-ink leading-tight">{user.name}</p>
+              <p className="text-xs capitalize text-ink-light leading-tight">{user.role}</p>
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-md border border-white/40 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10"
+              className="rounded-md border border-white/15 px-3 py-1.5 text-sm font-medium text-ink hover:bg-white/5"
             >
               Log out
             </button>
@@ -45,13 +45,13 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm font-medium text-indigo-100 hover:text-white"
+              className="text-sm font-medium text-ink-light hover:text-ink"
             >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="rounded-md bg-white px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+              className="rounded-md bg-gradient-to-r from-indigo-600 to-verdant-500 px-4 py-2 text-sm font-medium text-white shadow-[0_0_20px_rgba(79,70,229,0.35)] hover:opacity-90"
             >
               Sign up
             </Link>
