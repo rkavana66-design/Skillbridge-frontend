@@ -89,6 +89,7 @@ function UploadDocumentCard() {
   const [notice, setNotice] = useState<Notice>(null);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<VerificationStatus | null>(null);
+  const [resultNotes, setResultNotes] = useState<string | null>(null);
 
   async function pollVerification(documentId: string | number) {
     // Poll a handful of times since scanning may take a moment; stop early
@@ -97,11 +98,11 @@ function UploadDocumentCard() {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       try {
         const res = await getDocumentVerification(documentId);
+        setResult(res.verification_status);
+        setResultNotes((res as any).verification_details?.notes ?? null);
         if (res.verification_status !== "pending") {
-          setResult(res.verification_status);
           return;
         }
-        setResult(res.verification_status);
       } catch {
         // Keep trying — a transient failure here shouldn't stop polling.
       }
@@ -117,6 +118,7 @@ function UploadDocumentCard() {
     setLoading(true);
     setNotice(null);
     setResult(null);
+    setResultNotes(null);
     try {
       const uploaded = await uploadDocument(file, type);
       setNotice({ type: "success", text: "Document uploaded — running AI verification…" });
@@ -181,11 +183,14 @@ function UploadDocumentCard() {
           </p>
         )}
         {!scanning && result && (
-          <div className="flex items-center gap-2 text-sm text-ink-light">
-            Result: <VerificationBadge status={result} />
-            {result === "pending" && (
-              <span className="text-xs">Still processing — check your Profile page shortly.</span>
-            )}
+          <div className="text-sm text-ink-light">
+            <div className="flex items-center gap-2">
+              Result: <VerificationBadge status={result} />
+              {result === "pending" && (
+                <span className="text-xs">Still processing — check your Profile page shortly.</span>
+              )}
+            </div>
+            {resultNotes && <p className="mt-2 text-xs text-ink-light">{resultNotes}</p>}
           </div>
         )}
       </form>
@@ -206,144 +211,4 @@ function AddSkillCard() {
     setNotice(null);
     try {
       await addSkill({ name, proficiency, source: source || undefined });
-      setNotice({ type: "success", text: `Added "${name}" to your skills.` });
-      setName("");
-      setSource("");
-      setProficiency(60);
-    } catch (err) {
-      setNotice({
-        type: "error",
-        text: err instanceof ApiError ? err.message : "Could not add skill.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <Card title="Add a skill">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <Label htmlFor="skill-name">Skill</Label>
-          <Input
-            id="skill-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="React"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="skill-proficiency">Proficiency ({proficiency}%)</Label>
-          <input
-            id="skill-proficiency"
-            type="range"
-            min={0}
-            max={100}
-            value={proficiency}
-            onChange={(e) => setProficiency(Number(e.target.value))}
-            className="w-full accent-indigo-600"
-          />
-        </div>
-        <div>
-          <Label htmlFor="skill-source">Source (optional)</Label>
-          <Input
-            id="skill-source"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            placeholder="Coursework, internship, project…"
-          />
-        </div>
-        <Button type="submit" loading={loading} className="self-start">
-          Add skill
-        </Button>
-        <NoticeBanner notice={notice} />
-      </form>
-    </Card>
-  );
-}
-
-function AddProjectCard() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [techStack, setTechStack] = useState("");
-  const [githubUrl, setGithubUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState<Notice>(null);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setNotice(null);
-    try {
-      await addProject({
-        title,
-        description,
-        tech_stack: techStack,
-        github_url: githubUrl || undefined,
-      });
-      setNotice({ type: "success", text: `Added "${title}" to your projects.` });
-      setTitle("");
-      setDescription("");
-      setTechStack("");
-      setGithubUrl("");
-    } catch (err) {
-      setNotice({
-        type: "error",
-        text: err instanceof ApiError ? err.message : "Could not add project.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <Card title="Add a project">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <Label htmlFor="project-title">Title</Label>
-          <Input
-            id="project-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Campus Placement Tracker"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="project-description">Description</Label>
-          <Input
-            id="project-description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="What it does and the problem it solves"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="project-stack">Tech stack</Label>
-          <Input
-            id="project-stack"
-            value={techStack}
-            onChange={(e) => setTechStack(e.target.value)}
-            placeholder="Next.js, FastAPI, PostgreSQL"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="project-github">GitHub URL (optional)</Label>
-          <Input
-            id="project-github"
-            value={githubUrl}
-            onChange={(e) => setGithubUrl(e.target.value)}
-            placeholder="https://github.com/username/repo"
-          />
-        </div>
-        <Button type="submit" loading={loading} className="self-start">
-          Add project
-        </Button>
-        <NoticeBanner notice={notice} />
-      </form>
-    </Card>
-  );
-}
+      setNotice({ type: "success",
