@@ -8,9 +8,18 @@ import Card from "@/components/ui/Card";
 import Label from "@/components/ui/Label";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import VerificationResultPanel from "@/components/VerificationResultPanel";
 import { getAuth } from "@/lib/auth";
-import { addProject, addSkill, ApiError, getDocumentVerification, getStudentProfile, scanDocument, uploadDocument, VerificationStatus } from "@/lib/api";
-import VerificationBadge from "@/components/ui/VerificationBadge";
+import {
+  addProject,
+  addSkill,
+  ApiError,
+  getDocumentVerification,
+  scanDocument,
+  uploadDocument,
+  VerificationDetails,
+  VerificationStatus,
+} from "@/lib/api";
 
 type Notice = { type: "success" | "error"; text: string } | null;
 
@@ -89,17 +98,15 @@ function UploadDocumentCard() {
   const [notice, setNotice] = useState<Notice>(null);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<VerificationStatus | null>(null);
-  const [resultNotes, setResultNotes] = useState<string | null>(null);
+  const [resultDetails, setResultDetails] = useState<VerificationDetails | undefined>(undefined);
 
   async function pollVerification(documentId: string | number) {
-    // Poll a handful of times since scanning may take a moment; stop early
-    // once the status leaves "pending".
     for (let attempt = 0; attempt < 8; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       try {
         const res = await getDocumentVerification(documentId);
         setResult(res.verification_status);
-        setResultNotes((res as any).verification_details?.notes ?? null);
+        setResultDetails(res.verification_details);
         if (res.verification_status !== "pending") {
           return;
         }
@@ -118,7 +125,7 @@ function UploadDocumentCard() {
     setLoading(true);
     setNotice(null);
     setResult(null);
-    setResultNotes(null);
+    setResultDetails(undefined);
     try {
       const uploaded = await uploadDocument(file, type);
       setNotice({ type: "success", text: "Document uploaded — running AI verification…" });
@@ -182,17 +189,7 @@ function UploadDocumentCard() {
             Running AI verification on your document…
           </p>
         )}
-        {!scanning && result && (
-          <div className="text-sm text-ink-light">
-            <div className="flex items-center gap-2">
-              Result: <VerificationBadge status={result} />
-              {result === "pending" && (
-                <span className="text-xs">Still processing — check your Profile page shortly.</span>
-              )}
-            </div>
-            {resultNotes && <p className="mt-2 text-xs text-ink-light">{resultNotes}</p>}
-          </div>
-        )}
+        {!scanning && result && <VerificationResultPanel status={result} details={resultDetails} />}
       </form>
     </Card>
   );
