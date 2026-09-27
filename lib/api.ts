@@ -5,12 +5,29 @@ export const API_BASE_URL = BASE_URL;
 
 export type VerificationStatus = "verified" | "suspicious" | "rejected" | "pending";
 
+export interface VerificationDetails {
+  qr_found: boolean;
+  qr_domain: string | null;
+  domain_trusted: boolean | null;
+  qr_name: string | null;
+  name_match: boolean | null;
+  ocr_name_found: boolean | null;
+  ocr_issuer_found: string | null;
+  tamper_signals: {
+    has_exif: boolean;
+    exif_software: string | null;
+    resolution: [number, number] | null;
+    analysis_available: boolean;
+  };
+  notes: string;
+}
+
 export interface StudentDocument {
   id: string | number;
   type: string;
   file_path: string;
   verification_status: VerificationStatus;
-  verification_details?: string;
+  verification_details?: VerificationDetails;
 }
 
 export interface StudentSkill {
@@ -253,7 +270,7 @@ export function scanDocument(documentId: string | number) {
 }
 
 export function getDocumentVerification(documentId: string | number) {
-  return request<{ verification_status: VerificationStatus; verification_details?: string }>(
+  return request<{ verification_status: VerificationStatus; verification_details?: VerificationDetails }>(
     `/api/verification/document/${documentId}/verification`,
     { method: "GET" },
     true
