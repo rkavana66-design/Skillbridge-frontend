@@ -81,6 +81,7 @@ export interface SignupPayload {
   password: string;
   role: "student" | "recruiter";
   discipline?: string;
+  college?: string;
   designation?: string;
 }
 
