@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("student");
   const [discipline, setDiscipline] = useState("");
+  const [college, setCollege] = useState("");
   const [designation, setDesignation] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ export default function SignupPage() {
         password,
         role,
         discipline: role === "student" ? discipline : undefined,
+        college: role === "student" ? college : undefined,
         designation: role === "recruiter" ? designation : undefined,
       });
       setSuccess(true);
@@ -135,16 +137,27 @@ export default function SignupPage() {
               </div>
 
               {role === "student" ? (
-                <div>
-                  <Label htmlFor="discipline">Discipline</Label>
-                  <Input
-                    id="discipline"
-                    value={discipline}
-                    onChange={(e) => setDiscipline(e.target.value)}
-                    placeholder="Computer Science & Engineering"
-                    required
-                  />
-                </div>
+                <>
+                  <div>
+                    <Label htmlFor="discipline">Discipline</Label>
+                    <Input
+                      id="discipline"
+                      value={discipline}
+                      onChange={(e) => setDiscipline(e.target.value)}
+                      placeholder="Computer Science & Engineering"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="college">College / University</Label>
+                    <Input
+                      id="college"
+                      value={college}
+                      onChange={(e) => setCollege(e.target.value)}
+                      placeholder="e.g. Sapthagiri NPS University"
+                    />
+                  </div>
+                </>
               ) : (
                 <div>
                   <Label htmlFor="designation">Designation</Label>
