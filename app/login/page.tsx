@@ -28,7 +28,13 @@ export default function LoginPage() {
         email: res.email,
         role: res.role,
       });
-      router.push(res.role === "student" ? "/student/dashboard" : "/recruiter/dashboard");
+      router.push(
+        res.role === "student"
+          ? "/student/dashboard"
+          : res.role === "admin"
+          ? "/admin/review"
+          : "/recruiter/dashboard"
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not log in. Check your details.");
     } finally {
