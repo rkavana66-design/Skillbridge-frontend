@@ -87,7 +87,7 @@ export interface SignupPayload {
 
 export interface LoginResponse {
   access_token: string;
-  role: "student" | "recruiter";
+  role: "student" | "recruiter" | "admin";
   name: string;
   email: string;
 }
@@ -509,4 +509,33 @@ export async function getStudentResumeProfile(token: string): Promise<ResumeProf
   }
 
   return data as ResumeProfile;
+}
+
+// ---------- Admin: manual document review ----------
+
+export interface AdminDocumentListItem {
+  id: string;
+  student_id: string;
+  student_name: string | null;
+  type: string;
+  file_url: string;
+  verification_status: VerificationStatus;
+  verification_details?: VerificationDetails;
+  created_at: string;
+}
+
+export function getAdminDocuments() {
+  return request<AdminDocumentListItem[]>("/api/verification/admin/documents", { method: "GET" }, true);
+}
+
+export function manualVerifyDocument(
+  documentId: string,
+  status: "verified" | "suspicious" | "rejected",
+  notes?: string
+) {
+  return request<{ message?: string }>(
+    `/api/verification/manual-verify-document/${documentId}`,
+    { method: "POST", body: JSON.stringify({ status, notes }) },
+    true
+  );
 }
