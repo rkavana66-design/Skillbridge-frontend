@@ -116,9 +116,7 @@ export default function TakeTestPage() {
           .then((res) => {
             setTabSwitchCount(res.tab_switch_count);
             if (res.disqualified) {
-              setDisqualifyReason(
-                `You switched tabs ${res.tab_switch_count} times, which exceeds the allowed limit.`
-              );
+              setDisqualifyReason("You switched away from the test tab, so this attempt was ended.");
               setPhase("disqualified");
               stopCamera();
             }
@@ -280,7 +278,7 @@ export default function TakeTestPage() {
             </div>
 
             <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-500">
-              Don't switch tabs or exit fullscreen — repeated switches will disqualify this attempt.
+              Don't switch tabs or exit fullscreen — doing so will immediately end this attempt.
             </p>
 
             <div className="flex flex-col gap-4">
