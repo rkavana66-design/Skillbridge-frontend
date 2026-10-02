@@ -8,13 +8,14 @@ import Label from "@/components/ui/Label";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { ApiError, signup } from "@/lib/api";
-import { Role } from "@/lib/auth";
+
+type SignupRole = "student" | "recruiter";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("student");
+  const [role, setRole] = useState<SignupRole>("student");
   const [discipline, setDiscipline] = useState("");
   const [college, setCollege] = useState("");
   const [designation, setDesignation] = useState("");
@@ -86,7 +87,7 @@ export default function SignupPage() {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex gap-2 rounded-md bg-indigo-50 p-1">
-                {(["student", "recruiter"] as Role[]).map((r) => (
+                {(["student", "recruiter"] as SignupRole[]).map((r) => (
                   <button
                     type="button"
                     key={r}
