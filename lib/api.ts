@@ -328,8 +328,11 @@ export interface TestListItem {
 
 export interface QuestionForStudent {
   id: string;
+  question_type: "mcq" | "coding";
   text: string;
-  options: string[];
+  options?: string[];
+  starter_code?: string;
+  language?: string;
 }
 
 export interface StartAttemptResponse {
@@ -374,10 +377,28 @@ export function startTest(testId: string) {
   );
 }
 
-export function submitAttempt(attemptId: string, answers: Record<string, number>) {
+export function submitAttempt(
+  attemptId: string,
+  answers: Record<string, number>,
+  codeAnswers: Record<string, string> = {}
+) {
   return request<SubmitAttemptResponse>(
     `/api/assessment/attempts/${attemptId}/submit`,
-    { method: "POST", body: JSON.stringify({ answers }) },
+    { method: "POST", body: JSON.stringify({ answers, code_answers: codeAnswers }) },
+    true
+  );
+}
+
+export interface RunCodeResult {
+  stdout: string;
+  stderr: string;
+  success: boolean;
+}
+
+export function runCode(attemptId: string, language: string, code: string, stdin?: string) {
+  return request<RunCodeResult>(
+    `/api/assessment/attempts/${attemptId}/run-code`,
+    { method: "POST", body: JSON.stringify({ language, code, stdin }) },
     true
   );
 }
