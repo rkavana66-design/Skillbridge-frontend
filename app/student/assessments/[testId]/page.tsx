@@ -10,6 +10,7 @@ import { getAuth } from "@/lib/auth";
 import {
   ApiError,
   logProctoringEvent,
+  runCode,
   StartAttemptResponse,
   startTest,
   SubmitAttemptResponse,
@@ -28,6 +29,8 @@ export default function TakeTestPage() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [attempt, setAttempt] = useState<StartAttemptResponse | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [codeAnswers, setCodeAnswers] = useState<Record<string, string>>({});
+  const [runOutputs, setRunOutputs] = useState<Record<string, { stdout: string; stderr: string; running: boolean }>>({});
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const [disqualifyReason, setDisqualifyReason] = useState("");
@@ -39,6 +42,7 @@ export default function TakeTestPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const attemptRef = useRef<StartAttemptResponse | null>(null);
   const answersRef = useRef<Record<string, number>>({});
+  const codeAnswersRef = useRef<Record<string, string>>({});
   const submittedRef = useRef(false);
 
   // Keep refs in sync so interval/event callbacks always see current state
@@ -49,6 +53,9 @@ export default function TakeTestPage() {
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
+  useEffect(() => {
+    codeAnswersRef.current = codeAnswers;
+  }, [codeAnswers]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -60,7 +67,11 @@ export default function TakeTestPage() {
     submittedRef.current = true;
     stopCamera();
     try {
-      const res = await submitAttempt(attemptRef.current.attempt_id, answersRef.current);
+      const res = await submitAttempt(
+        attemptRef.current.attempt_id,
+        answersRef.current,
+        codeAnswersRef.current
+      );
       setResult(res);
       setPhase("submitted");
     } catch (err) {
@@ -81,6 +92,14 @@ export default function TakeTestPage() {
       .then((res) => {
         setAttempt(res);
         setSecondsLeft(res.duration_minutes * 60);
+        // Pre-fill each coding question's editor with its starter code.
+        const initialCode: Record<string, string> = {};
+        res.questions.forEach((q) => {
+          if (q.question_type === "coding") {
+            initialCode[q.id] = q.starter_code || "";
+          }
+        });
+        setCodeAnswers(initialCode);
         setPhase("in_progress");
       })
       .catch((err) => {
@@ -182,6 +201,31 @@ export default function TakeTestPage() {
 
   function selectAnswer(questionId: string, optionIndex: number) {
     setAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
+  }
+
+  function updateCode(questionId: string, code: string) {
+    setCodeAnswers((prev) => ({ ...prev, [questionId]: code }));
+  }
+
+  async function handleRunCode(questionId: string, language: string) {
+    if (!attempt) return;
+    setRunOutputs((prev) => ({ ...prev, [questionId]: { stdout: "", stderr: "", running: true } }));
+    try {
+      const res = await runCode(attempt.attempt_id, language, codeAnswers[questionId] || "");
+      setRunOutputs((prev) => ({
+        ...prev,
+        [questionId]: { stdout: res.stdout, stderr: res.stderr, running: false },
+      }));
+    } catch (err) {
+      setRunOutputs((prev) => ({
+        ...prev,
+        [questionId]: {
+          stdout: "",
+          stderr: err instanceof ApiError ? err.message : "Could not run code.",
+          running: false,
+        },
+      }));
+    }
   }
 
   function formatTime(totalSeconds: number) {
@@ -287,27 +331,63 @@ export default function TakeTestPage() {
                   <p className="text-sm font-medium text-ink">
                     {index + 1}. {question.text}
                   </p>
-                  <div className="mt-3 flex flex-col gap-2">
-                    {question.options.map((option, optionIndex) => (
-                      <label
-                        key={optionIndex}
-                        className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
-                          answers[question.id] === optionIndex
-                            ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                            : "border-indigo-100 text-ink hover:border-indigo-200"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={question.id}
-                          checked={answers[question.id] === optionIndex}
-                          onChange={() => selectAnswer(question.id, optionIndex)}
-                          className="accent-indigo-600"
-                        />
-                        {option}
-                      </label>
-                    ))}
-                  </div>
+
+                  {question.question_type === "mcq" && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      {(question.options || []).map((option, optionIndex) => (
+                        <label
+                          key={optionIndex}
+                          className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
+                            answers[question.id] === optionIndex
+                              ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                              : "border-indigo-100 text-ink hover:border-indigo-200"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={question.id}
+                            checked={answers[question.id] === optionIndex}
+                            onChange={() => selectAnswer(question.id, optionIndex)}
+                            className="accent-indigo-600"
+                          />
+                          {option}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {question.question_type === "coding" && (
+                    <div className="mt-3">
+                      <textarea
+                        value={codeAnswers[question.id] ?? ""}
+                        onChange={(e) => updateCode(question.id, e.target.value)}
+                        spellCheck={false}
+                        rows={10}
+                        className="w-full rounded-md border border-indigo-100 bg-slate-900 p-3 font-mono text-sm text-white outline-none focus:border-indigo-400"
+                      />
+                      <div className="mt-2 flex items-center gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          loading={runOutputs[question.id]?.running}
+                          onClick={() => handleRunCode(question.id, question.language || "python")}
+                        >
+                          Run
+                        </Button>
+                        <span className="text-xs text-ink-light">Language: {question.language || "python"}</span>
+                      </div>
+                      {runOutputs[question.id] && !runOutputs[question.id].running && (
+                        <div className="mt-2 rounded-md bg-slate-900 p-3 font-mono text-xs text-white">
+                          {runOutputs[question.id].stdout && (
+                            <pre className="whitespace-pre-wrap text-verdant-400">{runOutputs[question.id].stdout}</pre>
+                          )}
+                          {runOutputs[question.id].stderr && (
+                            <pre className="whitespace-pre-wrap text-clay-400">{runOutputs[question.id].stderr}</pre>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
