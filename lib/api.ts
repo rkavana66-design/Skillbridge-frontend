@@ -205,6 +205,7 @@ export function getStudentProfile() {
 }
 
 export function updateExternalProfiles(payload: {
+  college?: string;
   github_url?: string;
   linkedin_url?: string;
   leetcode_url?: string;
