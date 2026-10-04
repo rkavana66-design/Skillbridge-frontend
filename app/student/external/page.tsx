@@ -25,6 +25,7 @@ export default function StudentExternalPage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [college, setCollege] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [leetcodeUrl, setLeetcodeUrl] = useState("");
@@ -38,6 +39,7 @@ export default function StudentExternalPage() {
   function loadProfile() {
     return getStudentProfile().then((p) => {
       setProfile(p);
+      setCollege(p.college ?? "");
       setGithubUrl(p.github_url ?? "");
       setLinkedinUrl(p.linkedin_url ?? "");
       setLeetcodeUrl(p.leetcode_url ?? "");
@@ -62,6 +64,8 @@ export default function StudentExternalPage() {
     setNotice(null);
     try {
       await updateExternalProfiles({
+        // Always sent (even when empty) so a student can also clear it.
+        college,
         github_url: githubUrl || undefined,
         linkedin_url: linkedinUrl || undefined,
         leetcode_url: leetcodeUrl || undefined,
@@ -128,8 +132,8 @@ export default function StudentExternalPage() {
         <main className="flex-1 px-8 py-8">
           <h1 className="animate-fade-up font-display text-2xl font-semibold text-ink">External profiles</h1>
           <p className="mt-1 text-sm text-ink-light">
-            Add a photo and short bio, link your GitHub, LinkedIn and LeetCode. GitHub and LeetCode
-            can be verified automatically.
+            Add a photo, your college and a short bio, and link your GitHub, LinkedIn and LeetCode.
+            GitHub and LeetCode can be verified automatically.
           </p>
 
           {loading ? (
@@ -166,8 +170,21 @@ export default function StudentExternalPage() {
               </Card>
 
               <div className="grid gap-6 lg:grid-cols-2">
-              <Card title="Links">
+              <Card title="Details & links">
                 <form onSubmit={handleSave} className="flex flex-col gap-4">
+                  <div>
+                    <Label htmlFor="college">College / University</Label>
+                    <Input
+                      id="college"
+                      value={college}
+                      onChange={(e) => setCollege(e.target.value)}
+                      placeholder="e.g. Sapthagiri NPS University"
+                    />
+                    <p className="mt-1.5 text-xs text-ink-light">
+                      Used to recognise your institution when we read your certificates. Enter it
+                      the way it appears on them.
+                    </p>
+                  </div>
                   <div>
                     <Label htmlFor="github">GitHub URL</Label>
                     <Input
