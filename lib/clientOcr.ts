@@ -10,7 +10,7 @@ export async function extractTextFromPdfClientSide(
   onProgress?: (status: string) => void
 ): Promise<string> {
   onProgress?.("Loading your certificate...");
-  const pdfjsLib = await import("pdfjs-dist/build/pdf");
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
