@@ -105,6 +105,7 @@ function UploadDocumentCard() {
   const [resultDetails, setResultDetails] = useState<VerificationDetails | undefined>(undefined);
   const [tryingClientOcr, setTryingClientOcr] = useState(false);
   const [clientOcrStatus, setClientOcrStatus] = useState("");
+  const [clientOcrText, setClientOcrText] = useState("");
 
   async function pollVerification(documentId: string | number) {
     for (let attempt = 0; attempt < 8; attempt++) {
@@ -132,6 +133,8 @@ function UploadDocumentCard() {
     setNotice(null);
     setResult(null);
     setResultDetails(undefined);
+    setClientOcrText("");
+    setClientOcrStatus("");
     const fileForOcr = file; // keep a reference before clearing the input below
     try {
       const uploaded = await uploadDocument(file, type);
@@ -166,12 +169,15 @@ function UploadDocumentCard() {
     if (!lastUploadedFile || lastUploadedDocId === null) return;
     setTryingClientOcr(true);
     setClientOcrStatus("");
+    setClientOcrText("");
     try {
       const text = await extractTextFromPdfClientSide(lastUploadedFile, setClientOcrStatus);
+      setClientOcrText(text);
       setClientOcrStatus("Checking the result...");
       const res = await clientOcrRescan(lastUploadedDocId, text);
       setResult(res.verification_status);
       setResultDetails(res.verification_details);
+      setClientOcrStatus("");
     } catch (err) {
       setClientOcrStatus(
         err instanceof Error ? `Could not read this certificate: ${err.message}` : "Could not read this certificate."
@@ -246,6 +252,21 @@ function UploadDocumentCard() {
             </Button>
             {clientOcrStatus && <p className="mt-2 text-xs text-ink-light">{clientOcrStatus}</p>}
           </div>
+        )}
+
+        {!showClientOcrOption && clientOcrStatus && (
+          <p className="text-xs text-ink-light">{clientOcrStatus}</p>
+        )}
+
+        {!scanning && clientOcrText && (
+          <details className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+            <summary className="cursor-pointer text-sm font-medium text-ink">
+              What we read from your certificate
+            </summary>
+            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap text-xs text-ink-light">
+              {clientOcrText}
+            </pre>
+          </details>
         )}
       </form>
     </Card>
