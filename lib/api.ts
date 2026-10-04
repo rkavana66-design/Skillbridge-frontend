@@ -278,6 +278,14 @@ export function getDocumentVerification(documentId: string | number) {
   );
 }
 
+export function clientOcrRescan(documentId: string | number, ocrText: string) {
+  return request<{ verification_status: VerificationStatus; verification_details?: VerificationDetails }>(
+    `/api/verification/document/${documentId}/client-ocr-rescan`,
+    { method: "POST", body: JSON.stringify({ ocr_text: ocrText }) },
+    true
+  );
+}
+
 // ---------- Recruiter ----------
 
 export function searchCandidates(params: { q?: string; discipline?: string; minScore?: number }) {
