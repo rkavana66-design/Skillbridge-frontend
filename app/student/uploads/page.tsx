@@ -10,10 +10,12 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import VerificationResultPanel from "@/components/VerificationResultPanel";
 import { getAuth } from "@/lib/auth";
+import { extractTextFromPdfClientSide } from "@/lib/clientOcr";
 import {
   addProject,
   addSkill,
   ApiError,
+  clientOcrRescan,
   getDocumentVerification,
   scanDocument,
   uploadDocument,
@@ -93,12 +95,16 @@ function NoticeBanner({ notice }: { notice: Notice }) {
 
 function UploadDocumentCard() {
   const [file, setFile] = useState<File | null>(null);
+  const [lastUploadedFile, setLastUploadedFile] = useState<File | null>(null);
+  const [lastUploadedDocId, setLastUploadedDocId] = useState<string | number | null>(null);
   const [type, setType] = useState("certificate");
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<VerificationStatus | null>(null);
   const [resultDetails, setResultDetails] = useState<VerificationDetails | undefined>(undefined);
+  const [tryingClientOcr, setTryingClientOcr] = useState(false);
+  const [clientOcrStatus, setClientOcrStatus] = useState("");
 
   async function pollVerification(documentId: string | number) {
     for (let attempt = 0; attempt < 8; attempt++) {
@@ -126,6 +132,7 @@ function UploadDocumentCard() {
     setNotice(null);
     setResult(null);
     setResultDetails(undefined);
+    const fileForOcr = file; // keep a reference before clearing the input below
     try {
       const uploaded = await uploadDocument(file, type);
       setNotice({ type: "success", text: "Document uploaded — running AI verification…" });
@@ -134,6 +141,8 @@ function UploadDocumentCard() {
         ((document.getElementById("file-input") as HTMLInputElement).value = "");
 
       if (uploaded.id !== undefined) {
+        setLastUploadedFile(fileForOcr);
+        setLastUploadedDocId(uploaded.id);
         setScanning(true);
         try {
           await scanDocument(uploaded.id);
@@ -152,6 +161,34 @@ function UploadDocumentCard() {
       setLoading(false);
     }
   }
+
+  async function handleTryClientOcr() {
+    if (!lastUploadedFile || lastUploadedDocId === null) return;
+    setTryingClientOcr(true);
+    setClientOcrStatus("");
+    try {
+      const text = await extractTextFromPdfClientSide(lastUploadedFile, setClientOcrStatus);
+      setClientOcrStatus("Checking the result...");
+      const res = await clientOcrRescan(lastUploadedDocId, text);
+      setResult(res.verification_status);
+      setResultDetails(res.verification_details);
+    } catch (err) {
+      setClientOcrStatus(
+        err instanceof Error ? `Could not read this certificate: ${err.message}` : "Could not read this certificate."
+      );
+    } finally {
+      setTryingClientOcr(false);
+    }
+  }
+
+  // Offer browser-based OCR specifically when the server couldn't read any
+  // text at all (the native-PDF-text path found nothing) — this is exactly
+  // the case a scanned/photographed certificate falls into.
+  const showClientOcrOption =
+    !scanning &&
+    result === "suspicious" &&
+    resultDetails?.ocr_name_found === null &&
+    lastUploadedFile !== null;
 
   return (
     <Card title="Upload a certificate or document">
@@ -190,6 +227,26 @@ function UploadDocumentCard() {
           </p>
         )}
         {!scanning && result && <VerificationResultPanel status={result} details={resultDetails} />}
+
+        {showClientOcrOption && (
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+            <p className="text-sm text-ink">
+              This looks like a scanned or photographed certificate — our server couldn't read the
+              text automatically. You can try reading it right here in your browser instead (nothing
+              is sent anywhere except the final result).
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              loading={tryingClientOcr}
+              onClick={handleTryClientOcr}
+              className="mt-3"
+            >
+              Try reading in your browser
+            </Button>
+            {clientOcrStatus && <p className="mt-2 text-xs text-ink-light">{clientOcrStatus}</p>}
+          </div>
+        )}
       </form>
     </Card>
   );
