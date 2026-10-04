@@ -11,10 +11,12 @@
   "dependencies": {
     "lucide-react": "^0.383.0",
     "next": "14.2.35",
+    "pdfjs-dist": "^3.11.174",
     "qrcode.react": "^3.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.15.4"
+    "recharts": "^2.15.4",
+    "tesseract.js": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
